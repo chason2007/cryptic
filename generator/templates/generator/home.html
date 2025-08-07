@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Secure Password Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .card {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        .password-display {
+            font-family: monospace;
+            font-size: 18px;
+            letter-spacing: 1px;
+            padding: 10px;
+            background-color: #f1f8ff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .form-check {
+            margin-bottom: 10px;
+        }
+        .btn-icon {
+            margin-right: 8px;
+        }
+        .reminder {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        .loading {
+            display: none;
+            margin-top: 10px;
+        }
+        .qr-modal-content {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card p-4 mb-4">
+                    <h1 class="text-center mb-4">🔐 Secure Password Generator</h1>
+                    
+                    <div class="mb-4">
+                        <label for="password-length" class="form-label">Password Length: <span id="length-display">12</span></label>
+                        <input type="range" class="form-range" id="password-length" min="8" max="32" value="12">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-uppercase" checked>
+                            <label class="form-check-label" for="include-uppercase">
+                                Include Uppercase (A-Z)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-lowercase" checked>
+                            <label class="form-check-label" for="include-lowercase">
+                                Include Lowercase (a-z)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-digits" checked>
+                            <label class="form-check-label" for="include-digits">
+                                Include Digits (0-9)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-special">
+                            <label class="form-check-label" for="include-special">
+                                Include Special (!@#$)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-check mb-3">
+    <input class="form-check-input" type="checkbox" id="save-history">
+    <label class="form-check-label" for="save-history">
+        Save to password history
+    </label>
+</div>
+                    <button id="generate-btn" class="btn btn-success mb-4">
+                        <span class="btn-icon">🔐</span> Generate Password
+                    </button>
+                    
+                    <div class="password-display text-center" id="password-display">
+                        Your password will appear here
+                    </div>
+                    
+                    <div class="loading text-center" id="loading">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center">
+                        <button id="copy-btn" class="btn btn-warning me-2" disabled>
+                            <span class="btn-icon">🗌</span> Copy
+                        </button>
+                        <button id="qr-btn" class="btn btn-warning" disabled>
+                            <span class="btn-icon">📷</span> QR Code
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-3">
+    <a href="/history/" class="btn btn-info btn-sm">View Password History</a>
+</div>
+                    
+                    <div class="reminder text-center" id="reminder"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- QR Code Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="qrModalLabel">Password QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body qr-modal-content">
+                    <img id="qr-image" src="" alt="QR Code" class="img-fluid">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const lengthSlider = document.getElementById('password-length');
+            const lengthDisplay = document.getElementById('length-display');
+            const uppercaseCheckbox = document.getElementById('include-uppercase');
+            const lowercaseCheckbox = document.getElementById('include-lowercase');
+            const digitsCheckbox = document.getElementById('include-digits');
+            const specialCheckbox = document.getElementById('include-special');
+            const generateBtn = document.getElementById('generate-btn');
+            const passwordDisplay = document.getElementById('password-display');
+            const copyBtn = document.getElementById('copy-btn');
+            const qrBtn = document.getElementById('qr-btn');
+            const reminderText = document.getElementById('reminder');
+            const loading = document.getElementById('loading');
+            const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+            const qrImage = document.getElementById('qr-image');
+            
+            // Update length display
+            lengthSlider.addEventListener('input', function() {
+                lengthDisplay.textContent = this.value;
+            });
+            
+            // Generate password
+            generateBtn.addEventListener('click', function() {
+                // Validate at least one character type is selected
+                if (!uppercaseCheckbox.checked && !lowercaseCheckbox.checked && 
+                    !digitsCheckbox.checked && !specialCheckbox.checked) {
+                    alert('Select at least one character type!');
+                    return;
+                }
+                
+                // Show loading
+                loading.style.display = 'block';
+                passwordDisplay.textContent = 'Generating...';
+                
+                // Prepare data
+                const data = {
+        length: parseInt(lengthSlider.value),
+        upper: uppercaseCheckbox.checked,
+        lower: lowercaseCheckbox.checked,
+        digits: digitsCheckbox.checked,
+        special: specialCheckbox.checked,
+        save_history: document.getElementById('save-history').checked  // Add this line
+    };
+                
+                // API request
+                fetch('/generate/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.error) {
+                        alert(data.error);
+                        passwordDisplay.textContent = 'Error generating password';
+                        return;
+                    }
+                    
+                    passwordDisplay.textContent = data.password;
+                    copyBtn.disabled = false;
+                    qrBtn.disabled = false;
+                    reminderText.textContent = '🔔 Reminder: Update your password regularly!';
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    console.error('Error:', error);
+                    alert('Something went wrong. Please try again.');
+                    passwordDisplay.textContent = 'Error generating password';
+                });
+            });
+            
+            // Copy password
+            copyBtn.addEventListener('click', function() {
+                const password = passwordDisplay.textContent;
+                if (password && password !== 'Your password will appear here' && password !== 'Generating...' && password !== 'Error generating password') {
+                    navigator.clipboard.writeText(password)
+                        .then(() => {
+                            alert('Password copied to clipboard!');
+                        })
+                        .catch(err => {
+                            console.error('Could not copy text: ', err);
+                            alert('Failed to copy password. Please copy it manually.');
+                        });
+                }
+            });
+            
+            // Generate QR code
+            qrBtn.addEventListener('click', function() {
+                const password = passwordDisplay.textContent;
+                if (password && password !== 'Your password will appear here' && password !== 'Generating...' && password !== 'Error generating password') {
+                    // API request for QR code
+                    fetch('/qrcode/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ password: password })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+                        
+                        // Display QR code
+                        qrImage.src = `data:image/png;base64,${data.qr_code}`;
+                        qrModal.show();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to generate QR code. Please try again.');
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

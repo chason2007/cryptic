@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .card {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .password-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .password-item:last-child {
+            border-bottom: none;
+        }
+        .password-text {
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h1>Password History</h1>
+                        <a href="/" class="btn btn-primary">Back to Generator</a>
+                    </div>
+                    
+                    {% if passwords %}
+                        <div class="list-group">
+                            {% for password in passwords %}
+                                <div class="password-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="password-text">{{ password.password }}</span>
+                                        <span class="text-muted">{{ password.created_at|date:"Y-m-d H:i" }}</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            Length: {{ password.length }} | 
+                                            Uppercase: {% if password.has_uppercase %}Yes{% else %}No{% endif %} | 
+                                            Lowercase: {% if password.has_lowercase %}Yes{% else %}No{% endif %} | 
+                                            Digits: {% if password.has_digits %}Yes{% else %}No{% endif %} | 
+                                            Special: {% if password.has_special %}Yes{% else %}No{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No passwords have been saved yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
